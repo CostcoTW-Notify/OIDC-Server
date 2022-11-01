@@ -11,6 +11,7 @@ using OpenIddict.Server.AspNetCore;
 using System.Security.Claims;
 using OpenIddict.Validation.AspNetCore;
 using Microsoft.AspNetCore.Authorization;
+using OIDC_Server.Services.Interface;
 
 namespace OIDC_Server.Extensions
 {
@@ -78,13 +79,16 @@ namespace OIDC_Server.Extensions
                         case "line":
                             return Results.Challenge(properties: null, new[] { LineAuthenticationDefaults.AuthenticationScheme });
                         default:
-                            return Results.BadRequest();
+                            return Results.BadRequest("SSO Provider is invalid..");
                     }
 
                 var tokenPrincipal = new ClaimsPrincipal(principal);
+
                 foreach (var claim in tokenPrincipal.Claims)
                 {
-                    claim.SetDestinations(Destinations.AccessToken);
+                    if (claim.Type == Claims.Subject || claim.Type == Claims.Name)
+                        claim.SetDestinations(Destinations.AccessToken);
+                    claim.SetDestinations(Destinations.IdentityToken);
                 }
 
 
@@ -93,13 +97,18 @@ namespace OIDC_Server.Extensions
 
 
             app.MapGet("/oidc/userinfo", [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
-            (HttpContext context, ClaimsPrincipal user) =>
+            async (HttpContext context, ClaimsPrincipal principal, IUserService service) =>
             {
+                var userId = principal.GetClaim(Claims.Subject)!;
+                var user = await service.GetUserById(userId);
                 return new
                 {
-                    name = user.Identity!.Name
+                    sub = userId,
+                    name = user?.Name,
+                    picture = user?.Picture
                 };
             });
+
             return app;
         }
 

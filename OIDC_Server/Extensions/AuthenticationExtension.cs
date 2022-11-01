@@ -1,4 +1,5 @@
-﻿using OIDC_Server.Utility;
+﻿using AspNet.Security.OAuth.Line;
+using OIDC_Server.Utility;
 using OIDC_Server.Utility.SSOLoginAuthentication;
 
 namespace OIDC_Server.Extensions
@@ -24,11 +25,18 @@ namespace OIDC_Server.Extensions
                         {
                             var rngKey = RandomGenerator.GenerateString(8);
                             var redirectUri = context.ReturnUri?.Substring(0, context.ReturnUri.IndexOf('?') + 1) +
-                                              $"sso=line-{rngKey}&" +
+                                              $"sso={LineAuthenticationDefaults.AuthenticationScheme}-{rngKey}&" +
                                               context.ReturnUri?.Substring(context.ReturnUri.IndexOf('?') + 1);
 
+                            var query = context.ReturnUri!.Split('?').Last()
+                                                         .Split('&')
+                                                         .Where(x => !x.StartsWith("sso="))
+                                                         .ToList();
+
+                            query.Insert(0, $"sso={LineAuthenticationDefaults.AuthenticationScheme}-{rngKey}");
+
                             context.Properties!.SetString("ssoKey", rngKey);
-                            context.ReturnUri = redirectUri;
+                            context.ReturnUri = redirectUri!.Split('?').First() + "?" + string.Join("&", query);
                             return Task.CompletedTask;
                         };
                     })

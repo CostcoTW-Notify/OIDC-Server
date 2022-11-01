@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.Options;
+using OIDC_Server.Services.Interface;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -12,47 +14,53 @@ namespace OIDC_Server.Utility.SSOLoginAuthentication
             IOptionsMonitor<SSOLoginAuthenticationSchemeOptions> options,
             ILoggerFactory logger,
             UrlEncoder encoder,
-            ISystemClock clock)
+            ISystemClock clock,
+            IUserService service)
             : base(options, logger, encoder, clock)
         {
+            this.UserService = service;
         }
+
+        public IUserService UserService { get; }
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             Console.WriteLine($"Timeout is {Options.SSOLoginTimeout}");
-            var timeout = false;
 
             var ssoData = Request.Query["sso"].ToString();
 
-            if (timeout)
-                return AuthenticateResult.Fail("Login timeout");
-
-
             if (string.IsNullOrWhiteSpace(ssoData))
                 return AuthenticateResult.NoResult();
+
 
             var ssoInfo = ssoData.Split('-');
             if (ssoInfo.Length != 2)
                 return AuthenticateResult.Fail("Bad Request..");
             var ssoProvider = ssoInfo.First();
-            var userId = ssoInfo.Last();
+            var connectKey = ssoInfo.Last();
+
+            //connectKey = connectKey.ToLower();
+            var user = await this.UserService.GetUserByConnectKey(connectKey);
+
+            if (user is null)
+                return AuthenticateResult.Fail("ConnectKey invalid");
+           
+            if ((DateTimeOffset.Now - user.LastLoginTime) > Options.SSOLoginTimeout)
+                return AuthenticateResult.Fail("Login timeout");
+
 
             var identity = new ClaimsIdentity(
                 authenticationType: ssoProvider,
                 nameType: Claims.Name,
                 roleType: Claims.Role);
 
-
-            var claims = new List<Claim>
-            {
-                new Claim(Claims.Subject,userId),
-                new Claim(Claims.Name, "SSO-User Name"),
-                new Claim(Claims.Email,"SSO@gmail.com"),
-                new Claim(Claims.Picture,"http://picture.com"),
-                new Claim(Claims.AuthenticationMethodReference,identity.AuthenticationType!)
-            };
-
-            identity.AddClaims(claims);
+            identity.AddClaim(new Claim(Claims.AuthenticationMethodReference, ssoProvider));
+            identity.AddClaim(new Claim(Claims.Subject, user.Id!));
+            identity.AddClaim(new Claim(Claims.Name, user.Name!));
+            if (!string.IsNullOrWhiteSpace(user.Email))
+                identity.AddClaim(new Claim(Claims.Email, user.Email));
+            if (!string.IsNullOrWhiteSpace(user.Picture))
+                identity.AddClaim(new Claim(Claims.Picture, user.Picture.ToString()));
 
             var claimsPrincipal = new ClaimsPrincipal(identity);
 
@@ -63,19 +71,13 @@ namespace OIDC_Server.Utility.SSOLoginAuthentication
 
         protected override async Task HandleSignInAsync(ClaimsPrincipal user, AuthenticationProperties? properties)
         {
-            // Store User
-
-
-            //this.Response
-
-
-            //throw new NotImplementedException();
+            // Connect login key to user
+            await this.UserService.ProcessExternalLogin(user, properties!.GetString("ssoKey")!);
         }
 
-        protected override async Task HandleSignOutAsync(AuthenticationProperties? properties)
+        protected override Task HandleSignOutAsync(AuthenticationProperties? properties)
         {
-            Console.WriteLine("SignOut!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            //throw new NotImplementedException();
+            return Task.CompletedTask;
         }
     }
 }
