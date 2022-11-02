@@ -16,6 +16,8 @@ namespace OIDC_Server.Extensions
                     })
                     .AddLine(options =>
                     {
+                        // Because we are run HTTP in docker and Hosting on GCP Cloud Run with HTTPS 
+                        options.CorrelationCookie.SameSite = SameSiteMode.Unspecified;
                         var clientId = Environment.GetEnvironmentVariable(EnvironmentVariableKeys.LINE_CLIENT_ID);
                         var secret = Environment.GetEnvironmentVariable(EnvironmentVariableKeys.LINE_CLIENT_SERCET);
                         options.ClientId = clientId!;

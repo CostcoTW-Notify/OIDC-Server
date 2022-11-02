@@ -361,3 +361,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/OIDC_Server/HS256.key
+/OIDC_Server/RSA.pem

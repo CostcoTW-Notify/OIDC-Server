@@ -12,6 +12,8 @@ using System.Security.Claims;
 using OpenIddict.Validation.AspNetCore;
 using Microsoft.AspNetCore.Authorization;
 using OIDC_Server.Services.Interface;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography;
 
 namespace OIDC_Server.Extensions
 {
@@ -27,11 +29,22 @@ namespace OIDC_Server.Extensions
                     })
                     .AddServer(options =>
                     {
-                        // For develop
-                        options.AddDevelopmentEncryptionCertificate()
-                               .AddDevelopmentSigningCertificate()
-                               .AcceptAnonymousClients()
-                               ;
+                        if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == Environments.Development)
+                        {
+                            // For develop
+                            options.AddDevelopmentEncryptionCertificate()
+                                   .AddDevelopmentSigningCertificate();
+                        }
+                        else
+                        {
+                            var rsaKey = RSA.Create();
+                            rsaKey.ImportFromPem(File.ReadAllText("RSA.pem").ToCharArray());
+                            options.AddSigningKey(new RsaSecurityKey(rsaKey));
+                            options.AddEncryptionKey(new RsaSecurityKey(rsaKey));
+                        }
+
+                        //var hs256Key = File.ReadAllText("HS256.key");
+                        options.AddSigningKey(new SymmetricSecurityKey(File.ReadAllBytes("HS256.key")));
 
                         // Support OIDC Flow
                         options.AllowAuthorizationCodeFlow()
@@ -47,6 +60,7 @@ namespace OIDC_Server.Extensions
 
 
                         options.UseAspNetCore()
+                               .DisableTransportSecurityRequirement()
                                .EnableAuthorizationEndpointPassthrough()
                                .EnableUserinfoEndpointPassthrough()
                                //.EnableLogoutEndpointPassthrough()
@@ -56,7 +70,12 @@ namespace OIDC_Server.Extensions
                         options.SetAccessTokenLifetime(TimeSpan.FromMinutes(30))
                                .SetAuthorizationCodeLifetime(TimeSpan.FromMinutes(10))
                                .SetRefreshTokenLifetime(TimeSpan.FromDays(1))
-                               .DisableAccessTokenEncryption();
+                               .DisableAccessTokenEncryption()
+                               ;
+
+                        // Database setting
+                        options.DisableAuthorizationStorage();
+
                     })
                     .AddValidation(options =>
                     {

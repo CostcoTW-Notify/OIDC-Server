@@ -1,13 +1,5 @@
-using AspNet.Security.OAuth.Line;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using OIDC_Server.Extensions;
 using OIDC_Server.Utility;
-using OIDC_Server.Utility.SSOLoginAuthentication;
-using OpenIddict.Abstractions;
-using OpenIddict.Server.AspNetCore;
-using System.Security.Claims;
-using static OpenIddict.Abstractions.OpenIddictConstants;
 
 EnsureVariableExists();
 
@@ -24,7 +16,6 @@ builder.Services.SetupOpeniddict();
 builder.Services.SetupAuthentication();
 
 
-
 builder.Services.AddCors(op =>
 {
     op.AddPolicy(
@@ -37,7 +28,6 @@ builder.Services.AddCors(op =>
         });
 });
 
-
 builder.Host.SetupAutoFac();
 
 var app = builder.Build();
@@ -45,15 +35,26 @@ var app = builder.Build();
 
 await app.InitOpeniddictDatabase();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Keep err log  
+app.Use(async (context, next) =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    try
+    {
+        await next.Invoke();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("Caught EX: " + ex.Message);
+        Console.WriteLine(ex);
+        throw;
+    }
+
+});
+// Configure the HTTP request pipeline.
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseCors("AllowAll");
-app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
