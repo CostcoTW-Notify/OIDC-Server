@@ -20,7 +20,4 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-ADD ./OIDC_Server/RSA.pem /app/RSA.pem
-ADD ./OIDC_Server/HS256.key /app/HS256.key
-
 ENTRYPOINT ["dotnet", "OIDC_Server.dll"]

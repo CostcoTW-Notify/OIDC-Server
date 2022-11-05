@@ -14,6 +14,8 @@ using Microsoft.AspNetCore.Authorization;
 using OIDC_Server.Services.Interface;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore;
 
 namespace OIDC_Server.Extensions
 {
@@ -63,7 +65,7 @@ namespace OIDC_Server.Extensions
                                .DisableTransportSecurityRequirement()
                                .EnableAuthorizationEndpointPassthrough()
                                .EnableUserinfoEndpointPassthrough()
-                               //.EnableLogoutEndpointPassthrough()
+                               .EnableLogoutEndpointPassthrough()
                                ;
 
                         // Token expire setting
@@ -88,8 +90,18 @@ namespace OIDC_Server.Extensions
 
         public static WebApplication UseOpeniddictRoute(this WebApplication app)
         {
-            app.MapGet("/oidc/authorize/{ssoProvider}", async (HttpContext context, string ssoProvider) =>
+            app.MapGet("/oidc/authorize/{ssoProvider}", async
+                (HttpContext context,
+                string ssoProvider,
+                [FromQuery] string redirect_uri,
+                [FromQuery] string client_id,
+                [FromQuery] string response_type,
+                [FromQuery] string scope,
+                [FromQuery] string state) =>
             {
+                var request = context.GetOpenIddictServerRequest();
+                if (request is null)
+                    return Results.BadRequest();
 
                 var principal = (await context.AuthenticateAsync(SSOLoginAuthenticationDefaults.AuthenticationScheme))?.Principal;
                 if (principal is null)
@@ -101,7 +113,10 @@ namespace OIDC_Server.Extensions
                             return Results.BadRequest("SSO Provider is invalid..");
                     }
 
+
                 var tokenPrincipal = new ClaimsPrincipal(principal);
+
+                tokenPrincipal.SetScopes(request.GetScopes().Where(x => x.Equals(Scopes.OfflineAccess)));
 
                 foreach (var claim in tokenPrincipal.Claims)
                 {
@@ -126,6 +141,14 @@ namespace OIDC_Server.Extensions
                     name = user?.Name,
                     picture = user?.Picture
                 };
+            });
+
+
+            app.MapGet("/oidc/sign-out", ([FromQuery] string post_logout_redirect_uri) =>
+            {
+                if (string.IsNullOrWhiteSpace(post_logout_redirect_uri))
+                    return Results.BadRequest();
+                return Results.Redirect(post_logout_redirect_uri);
             });
 
             return app;
