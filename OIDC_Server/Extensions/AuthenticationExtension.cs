@@ -22,6 +22,7 @@ namespace OIDC_Server.Extensions
                         var secret = Environment.GetEnvironmentVariable(EnvironmentVariableKeys.LINE_CLIENT_SERCET);
                         options.ClientId = clientId!;
                         options.ClientSecret = secret!;
+                        options.Scope.Add("email");
 
                         options.Events.OnTicketReceived = (context) =>
                         {

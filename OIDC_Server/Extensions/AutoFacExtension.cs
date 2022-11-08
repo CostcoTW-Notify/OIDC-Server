@@ -20,7 +20,7 @@ namespace OIDC_Server.Extensions
                    builder.Register(c =>
                    {
                        var mongoUrl = new MongoUrl(connStr);
-                       var db = new MongoClient(mongoUrl).GetDatabase(mongoUrl.DatabaseName);
+                       var db = new MongoClient(mongoUrl).GetDatabase("OIDC-Server");
                        return db;
                    }).AsImplementedInterfaces().SingleInstance();
 

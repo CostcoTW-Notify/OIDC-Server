@@ -116,7 +116,7 @@ namespace OIDC_Server.Extensions
 
                 var tokenPrincipal = new ClaimsPrincipal(principal);
 
-                tokenPrincipal.SetScopes(request.GetScopes().Where(x => x.Equals(Scopes.OfflineAccess)));
+                tokenPrincipal.SetScopes(request.GetScopes());
 
                 foreach (var claim in tokenPrincipal.Claims)
                 {
