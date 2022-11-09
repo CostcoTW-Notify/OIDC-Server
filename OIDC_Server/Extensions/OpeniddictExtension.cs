@@ -16,6 +16,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore;
+using OpenIddict.Server;
 
 namespace OIDC_Server.Extensions
 {
@@ -77,6 +78,19 @@ namespace OIDC_Server.Extensions
 
                         // Database setting
                         options.DisableAuthorizationStorage();
+
+                        // Rewrite issuer schema (because we are run in gcp cloud run with ssl)
+                        options.AddEventHandler<OpenIddictServerEvents.ExtractConfigurationRequestContext>(builder =>
+                            builder.UseInlineHandler(context =>
+                            {
+                                var overwrite = new UriBuilder(context.Issuer!)
+                                {
+                                    Scheme = Uri.UriSchemeHttps,
+                                    Port = -1 // default port for scheme
+                                };
+                                context.Issuer = overwrite.Uri;
+                                return default;
+                            }));
 
                     })
                     .AddValidation(options =>
