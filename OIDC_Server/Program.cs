@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.DataProtection;
+using MongoDB.Driver;
 using OIDC_Server.Extensions;
 using OIDC_Server.Utility;
 
@@ -11,7 +13,8 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
+builder.Services.AddDataProtection()
+                .PersistKeysToMongoDb(c => c.GetRequiredService<IMongoDatabase>());
 builder.Services.SetupOpeniddict();
 builder.Services.SetupAuthentication();
 

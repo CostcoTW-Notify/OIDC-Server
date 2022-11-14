@@ -19,5 +19,6 @@ RUN dotnet publish "OIDC_Server.csproj" -c Release -o /app/publish /p:UseAppHost
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+ENV run_in_container=true
 
 ENTRYPOINT ["dotnet", "OIDC_Server.dll"]

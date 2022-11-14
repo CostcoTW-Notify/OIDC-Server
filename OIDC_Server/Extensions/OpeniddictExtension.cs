@@ -80,17 +80,18 @@ namespace OIDC_Server.Extensions
                         options.DisableAuthorizationStorage();
 
                         // Rewrite issuer schema (because we are run in gcp cloud run with ssl)
-                        options.AddEventHandler<OpenIddictServerEvents.ExtractConfigurationRequestContext>(builder =>
-                            builder.UseInlineHandler(context =>
-                            {
-                                var overwrite = new UriBuilder(context.Issuer!)
+                        if (Environment.GetEnvironmentVariable("run_in_container")?.ToUpper().Equals("TRUE") ?? false)
+                            options.AddEventHandler<OpenIddictServerEvents.ExtractConfigurationRequestContext>(builder =>
+                                builder.UseInlineHandler(context =>
                                 {
-                                    Scheme = Uri.UriSchemeHttps,
-                                    Port = -1 // default port for scheme
-                                };
-                                context.Issuer = overwrite.Uri;
-                                return default;
-                            }));
+                                    var overwrite = new UriBuilder(context.Issuer!)
+                                    {
+                                        Scheme = Uri.UriSchemeHttps,
+                                        Port = -1 // default port for scheme
+                                    };
+                                    context.Issuer = overwrite.Uri;
+                                    return default;
+                                }));
 
                     })
                     .AddValidation(options =>
