@@ -1,8 +1,8 @@
 ﻿using AspNet.Security.OAuth.Line;
-using MongoDB.Bson;
 using MongoDB.Driver;
 using OIDC_Server.Models.Mongo;
 using OIDC_Server.Repositories.Interface;
+using System.Diagnostics.CodeAnalysis;
 
 namespace OIDC_Server.Repositories
 {
@@ -15,10 +15,10 @@ namespace OIDC_Server.Repositories
             this.UserCollection = userCollection;
         }
 
-        public async Task<User?> GetUserById(string id)
+        public async Task<User?> GetUserById([DisallowNull] string id)
             => await this.UserCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
-        public async Task<User?> GetUserBySubject(string ssoProvider, string subject)
+        public async Task<User?> GetUserBySubject([DisallowNull] string ssoProvider, [DisallowNull] string subject)
         {
             switch (ssoProvider)
             {
@@ -28,9 +28,6 @@ namespace OIDC_Server.Repositories
                     return null;
             }
         }
-
-        public async Task<User?> GetUserByConnectKey(string connectKey)
-            => await this.UserCollection.Find(x => x.ConnectKey == connectKey).FirstOrDefaultAsync();
 
         public async Task Create(User user)
             => await this.UserCollection.InsertOneAsync(user);

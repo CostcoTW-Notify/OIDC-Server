@@ -3,6 +3,7 @@ using OIDC_Server.Models.Mongo;
 using OIDC_Server.Repositories.Interface;
 using OIDC_Server.Services.Interface;
 using OpenIddict.Abstractions;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Claims;
 
 namespace OIDC_Server.Services
@@ -28,7 +29,7 @@ namespace OIDC_Server.Services
             return user;
         }
 
-        public async Task ProcessExternalLogin(ClaimsPrincipal principal, string connectKey)
+        public async Task<User?> ProcessExternalLogin(ClaimsPrincipal principal)
         {
             switch (principal.Identity!.AuthenticationType)
             {
@@ -61,20 +62,17 @@ namespace OIDC_Server.Services
                         if (string.IsNullOrWhiteSpace(user.Picture))
                             user.Picture = user.LinkLine.Picture;
 
-                        user.ConnectKey = connectKey;
                         user.LastLoginTime = DateTime.Now;
                         await this.UserRepo.Update(user);
-                        return;
+                        return user;
                     }
                 default:
-                    return;
+                    return null;
             }
         }
 
-        public async Task<User?> GetUserByConnectKey(string connectKey)
-            => await this.UserRepo.GetUserByConnectKey(connectKey);
-
         public async Task<User?> GetUserById(string id)
             => await this.UserRepo.GetUserById(id);
+
     }
 }

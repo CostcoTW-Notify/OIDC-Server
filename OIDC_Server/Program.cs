@@ -22,10 +22,14 @@ builder.Services.SetupAuthentication();
 builder.Services.AddCors(op =>
 {
     op.AddPolicy(
-        name: "AllowAll",
+        name: "Allow-GitHub.io-SPA-App",
         policy =>
         {
-            policy.AllowAnyOrigin();
+            policy.WithOrigins(
+                "https://costcotw-notify.github.io",
+                "http://localhost:5173",
+                "http://127.0.0.1:5173"
+                );
             policy.AllowAnyMethod();
             policy.AllowAnyHeader();
         });
@@ -47,8 +51,10 @@ app.Use(async (context, next) =>
     }
     catch (Exception ex)
     {
+        Console.WriteLine("============= Error ============");
         Console.WriteLine("Caught EX: " + ex.Message);
         Console.WriteLine(ex);
+        Console.WriteLine("============== End =============");
         throw;
     }
 
@@ -57,7 +63,7 @@ app.Use(async (context, next) =>
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseCors("AllowAll");
+app.UseCors("Allow-GitHub.io-SPA-App");
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -1,15 +1,14 @@
 ﻿using OIDC_Server.Models.Mongo;
+using System.Diagnostics.CodeAnalysis;
 
 namespace OIDC_Server.Repositories.Interface
 {
     public interface IUserRepository
     {
 
-        public Task<User?> GetUserById(string id);
+        public Task<User?> GetUserById([DisallowNull] string id);
 
-        public Task<User?> GetUserBySubject(string ssoProvider, string subject);
-
-        public Task<User?> GetUserByConnectKey(string connectKey);
+        public Task<User?> GetUserBySubject([DisallowNull] string ssoProvider, [DisallowNull] string subject);
 
         public Task Create(User user);
 

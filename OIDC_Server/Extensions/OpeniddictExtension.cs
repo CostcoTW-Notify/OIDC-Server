@@ -6,7 +6,6 @@ using OpenIddict.MongoDb;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 using AspNet.Security.OAuth.Line;
 using Microsoft.AspNetCore.Authentication;
-using OIDC_Server.Utility.SSOLoginAuthentication;
 using OpenIddict.Server.AspNetCore;
 using System.Security.Claims;
 using OpenIddict.Validation.AspNetCore;
@@ -17,6 +16,7 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore;
 using OpenIddict.Server;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace OIDC_Server.Extensions
 {
@@ -112,13 +112,14 @@ namespace OIDC_Server.Extensions
                 [FromQuery] string client_id,
                 [FromQuery] string response_type,
                 [FromQuery] string scope,
-                [FromQuery] string state) =>
+                [FromQuery] string state,
+                [FromServices] IUserService userService) =>
             {
                 var request = context.GetOpenIddictServerRequest();
                 if (request is null)
                     return Results.BadRequest();
 
-                var principal = (await context.AuthenticateAsync(SSOLoginAuthenticationDefaults.AuthenticationScheme))?.Principal;
+                var principal = (await context.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme))?.Principal;
                 if (principal is null)
                     switch (ssoProvider.ToLower())
                     {
@@ -129,16 +130,24 @@ namespace OIDC_Server.Extensions
                     }
 
 
-                var tokenPrincipal = new ClaimsPrincipal(principal);
+                var user = await userService.ProcessExternalLogin(principal);
 
+
+                var identity = new ClaimsIdentity(
+                authenticationType: ssoProvider,
+                nameType: Claims.Name,
+                roleType: Claims.Role);
+
+                identity.AddClaim(new Claim(Claims.Subject, user.Id!));
+                identity.AddClaim(new Claim(Claims.Name, user.Name!).SetDestinations(Destinations.IdentityToken));
+                if (!string.IsNullOrWhiteSpace(user.Email))
+                    identity.AddClaim(new Claim(Claims.Email, user.Email).SetDestinations(Destinations.IdentityToken));
+                if (!string.IsNullOrWhiteSpace(user.Picture))
+                    identity.AddClaim(new Claim(Claims.Picture, user.Picture.ToString()).SetDestinations(Destinations.IdentityToken));
+
+
+                var tokenPrincipal = new ClaimsPrincipal(identity);
                 tokenPrincipal.SetScopes(request.GetScopes());
-
-                foreach (var claim in tokenPrincipal.Claims)
-                {
-                    if (claim.Type == Claims.Subject || claim.Type == Claims.Name)
-                        claim.SetDestinations(Destinations.AccessToken);
-                    claim.SetDestinations(Destinations.IdentityToken);
-                }
 
 
                 return Results.SignIn(tokenPrincipal, properties: null, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
@@ -159,10 +168,13 @@ namespace OIDC_Server.Extensions
             });
 
 
-            app.MapGet("/oidc/sign-out", ([FromQuery] string post_logout_redirect_uri) =>
+            app.MapGet("/oidc/sign-out", async (HttpContext httpContext, [FromQuery] string post_logout_redirect_uri) =>
             {
                 if (string.IsNullOrWhiteSpace(post_logout_redirect_uri))
                     return Results.BadRequest();
+
+                await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
                 return Results.Redirect(post_logout_redirect_uri);
             });
 
