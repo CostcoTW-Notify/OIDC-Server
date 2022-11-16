@@ -28,7 +28,8 @@ builder.Services.AddCors(op =>
             policy.WithOrigins(
                 "https://costcotw-notify.github.io",
                 "http://localhost:5173",
-                "http://127.0.0.1:5173"
+                "http://127.0.0.1:5173",
+                "http://192.168.2.6:5173"
                 );
             policy.AllowAnyMethod();
             policy.AllowAnyHeader();

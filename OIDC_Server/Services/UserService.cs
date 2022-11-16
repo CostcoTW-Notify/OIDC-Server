@@ -44,7 +44,7 @@ namespace OIDC_Server.Services
 
                         var displayName = principal.GetClaim(ClaimTypes.Name);
                         var picture = principal.GetClaim("urn:line:picture_url");
-
+                        var email = principal.GetClaim(ClaimTypes.Email);
 
                         if (user.LinkLine is null)
                         {
@@ -56,11 +56,14 @@ namespace OIDC_Server.Services
 
                         user.LinkLine.DisplayName = displayName;
                         user.LinkLine.Picture = picture;
+                        user.LinkLine.Email = email;
 
                         if (string.IsNullOrWhiteSpace(user.Name))
                             user.Name = user.LinkLine.DisplayName;
                         if (string.IsNullOrWhiteSpace(user.Picture))
                             user.Picture = user.LinkLine.Picture;
+                        if (string.IsNullOrWhiteSpace(user.Email))
+                            user.Email = user.LinkLine.Email;
 
                         user.LastLoginTime = DateTime.Now;
                         await this.UserRepo.Update(user);

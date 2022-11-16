@@ -5,6 +5,10 @@ VisualStudioVersion = 17.3.32922.545
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OIDC_Server", "OIDC_Server\OIDC_Server.csproj", "{48789035-B6D7-4EC8-8574-C8B4E5FF8E05}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OIDC-Server.Test", "OIDC-Server.Test\OIDC-Server.Test.csproj", "{0B1B473A-B93B-4FE7-BB7D-D6CD7EB31F87}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnitTest", "UnitTest", "{39ABB96F-5970-4767-8E42-076585E667F1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,9 +19,16 @@ Global
 		{48789035-B6D7-4EC8-8574-C8B4E5FF8E05}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{48789035-B6D7-4EC8-8574-C8B4E5FF8E05}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{48789035-B6D7-4EC8-8574-C8B4E5FF8E05}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0B1B473A-B93B-4FE7-BB7D-D6CD7EB31F87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B1B473A-B93B-4FE7-BB7D-D6CD7EB31F87}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B1B473A-B93B-4FE7-BB7D-D6CD7EB31F87}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B1B473A-B93B-4FE7-BB7D-D6CD7EB31F87}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{0B1B473A-B93B-4FE7-BB7D-D6CD7EB31F87} = {39ABB96F-5970-4767-8E42-076585E667F1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FC0DC6A3-875D-48EC-8115-72A470F45521}
