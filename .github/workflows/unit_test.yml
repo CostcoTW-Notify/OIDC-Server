@@ -1,0 +1,43 @@
+name: My UnitTest
+
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - '**.md'
+  pull_request:
+    branches: [ master ]
+    paths-ignore:
+      - '**.md'
+  workflow_dispatch:
+
+jobs:
+  Build_and_UT:
+    permissions: write-all
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 3.1
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build
+      run: dotnet build --no-restore
+    
+    - name: Test
+      run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" || true
+      
+    - name: Create Test Report
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Test Report                 # Name of the check run which will be created
+        path: "**/test-results.trx"       # Path to test results (inside artifact .zip)
+        reporter: dotnet-trx              # Format of test results
+        fail-on-error: true
